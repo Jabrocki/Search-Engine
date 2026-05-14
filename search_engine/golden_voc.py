@@ -1,14 +1,25 @@
-from db_models import db, Chunk
+from db.models import db, Chunk
+from utils.vocab_file import save_vocab_to_file
+from config import MIN_DF, MAX_DF_RATIO, MAX_FEATURES
+from config import FLUSH_INTERVAL, PRINT_INTERVAL, MIN_DF_FLUSH_THRESHOLD
 
 
 def analyze_and_filter_vocabulary():
+    """
+    Function creates a golden vocabulary.
+    It iterates through all chunks in the database.
+    Later using chunk bag of words (words are normalized and preprocessed using Porter Stemmer 2),
+    it calculates frequency of each word across all chunks.
+    After that it applies DF thresholds to filter out very common and very rare words.
+    Finally it returns a set of filtered words as the golden vocabulary.
+    """
     hash_counts = {}
     total_chunks = 0
     query = Chunk.select(Chunk.compressed_json).iterator()
 
     for chunk in query:
         total_chunks += 1
-        data = chunk.get_data()
+        data = chunk.get_json()
         for word in data.keys():
             h = hash(word)
             if h in hash_counts:
@@ -16,20 +27,22 @@ def analyze_and_filter_vocabulary():
             else:
                 hash_counts[h] = 1
 
-        if total_chunks % 50000 == 0:
-            print(f"Purging hash counts with frequency <=  at {total_chunks} chunks...")
-            keys_to_delete = [h for h, count in hash_counts.items() if count <= 1]
+        if total_chunks % FLUSH_INTERVAL == 0:
+            print(
+                f"Purging hash counts with frequency <= {MIN_DF_FLUSH_THRESHOLD}  at {total_chunks} chunks..."
+            )
+            keys_to_delete = [
+                h for h, count in hash_counts.items() if count <= MIN_DF_FLUSH_THRESHOLD
+            ]
             for h in keys_to_delete:
                 del hash_counts[h]
             print(f"Hash counts purged. Remaining unique hashes: {len(hash_counts)}")
 
-        if total_chunks % 10000 == 0:
+        if total_chunks % PRINT_INTERVAL == 0:
             print(f"Processed {total_chunks} chunks...")
             print(f"Unique word hashes so far: {len(hash_counts)}")
 
-    MIN_DF = 5
-    MAX_DF = int(total_chunks * 0.50)
-    MAX_FEATURES = 350000
+    MAX_DF = MAX_DF_RATIO(total_chunks)
 
     valid_items = [
         (h, count) for h, count in hash_counts.items() if MIN_DF <= count <= MAX_DF
@@ -50,7 +63,7 @@ def analyze_and_filter_vocabulary():
         iter += 1
         if not valid_hashes:
             break
-        data = chunk.get_data()
+        data = chunk.get_json()
         for word in data.keys():
             h = hash(word)
             if h in valid_hashes:
@@ -58,7 +71,7 @@ def analyze_and_filter_vocabulary():
                 valid_hashes.remove(h)
                 if not valid_hashes:
                     break
-        if iter % 10000 == 0:
+        if iter % PRINT_INTERVAL == 0:
             print(f"Processed {iter} chunks for filtering...")
     print(f"Filtering complete. Final vocabulary size: {len(filtered_words)}")
 
@@ -67,16 +80,6 @@ def analyze_and_filter_vocabulary():
 
 if __name__ == "__main__":
     db.connect()
-
     golden_vocabulary = analyze_and_filter_vocabulary()
-
-    filename = "golden_vocabulary.txt"
-    print(f"Saving golden vocabulary to {filename}...")
-
-    with open(filename, "w", encoding="utf-8") as f:
-        for word in sorted(golden_vocabulary):
-            f.write(word + "\n")
-
-    print(
-        f"Golden vocabulary saved to {filename}. Total words: {len(golden_vocabulary)}"
-    )
+    save_vocab_to_file(golden_vocabulary)
+    db.close()

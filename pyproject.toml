@@ -13,13 +13,17 @@ authors = [
 dependencies = [
     "scikit-learn",
     "nltk",
-    "scrappy",
+    "scrapy",
     "peewee",
     "numpy",
     "scrapy",
     "streamlit",
     "joblib",
 ]
+
+
+[tool.setuptools]
+py-modules = ["config"]
 
 [tool.setuptools.packages.find]
 where = ["."]

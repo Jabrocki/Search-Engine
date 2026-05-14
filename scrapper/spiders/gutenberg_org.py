@@ -1,30 +1,18 @@
 import scrapy
 from ..items import BookItem, ChunkItem
 import urllib.parse as urlparse
+from config import NO_BOOKS, NO_WORDS_PER_CHUNK, OVERLAP_SIZE, MAX_NO_OF_CHUNKS
 
 
 class GutenbergOrgSpider(scrapy.Spider):
     name = "gutenberg_org"
     allowed_domains = ["gutenberg.org"]
 
-    # Licznik dokumentów (chunków)
     doc_count = 0
 
-    custom_settings = {
-        "CONCURRENT_REQUESTS": 16,
-        "CONCURRENT_REQUESTS_PER_DOMAIN": 16,
-        "AUTOTHROTTLE_ENABLED": True,
-        "AUTOTHROTTLE_START_DELAY": 0.5,
-        "AUTOTHROTTLE_TARGET_CONCURRENCY": 12.0,
-        "DOWNLOAD_DELAY": 0.25,
-        "USER_AGENT": "Jan Jabrocki AGH Student, sorry if too many requests. Doing it for school project. Contact: jjabrocki@gmail.com",
-        "RETRY_TIMES": 5,
-        "RETRY_HTTP_CODES": [429, 500, 502, 503, 504, 408],
-        "COOKIES_ENABLED": False,
-    }
-
     def start_requests(self):
-        for i in range(1, 6000):
+        for i in range(1, NO_BOOKS + 1):
+            print(f"Scheduling book ID: {i}")
             yield scrapy.Request(
                 f"https://www.gutenberg.org/ebooks/{i}", callback=self.parse_info
             )
@@ -39,6 +27,13 @@ class GutenbergOrgSpider(scrapy.Spider):
             author = response.css('[itemprop="creator"]::text').get()
             title_parts = response.css('[itemprop="headline"]::text').getall()
             title = " ".join([t.strip() for t in title_parts if t.strip()])
+            # Skip dictionaries, encyclopedias, and CIA documents
+            if (
+                "dictionary" in title.lower()
+                or "encyclopedia" in title.lower()
+                or "cia" in title.lower()
+            ):
+                return
 
             item = BookItem(
                 id=book_id,
@@ -58,6 +53,8 @@ class GutenbergOrgSpider(scrapy.Spider):
                 )
 
     def parse_book(self, response):
+        if self.doc_count >= MAX_NO_OF_CHUNKS:
+            return
         book_id = response.meta["book_id"]
 
         sel = response.selector
@@ -77,11 +74,10 @@ class GutenbergOrgSpider(scrapy.Spider):
 
         all_words = " ".join(text_blocks).split()
 
-        chunk_size = 1200
-        overlap = 80
-
-        for i in range(0, len(all_words), chunk_size - overlap):
-            word_slice = all_words[i : i + chunk_size]
+        for i in range(0, len(all_words), NO_WORDS_PER_CHUNK - OVERLAP_SIZE):
+            if self.doc_count >= MAX_NO_OF_CHUNKS:
+                return
+            word_slice = all_words[i : i + NO_WORDS_PER_CHUNK]
             if len(word_slice) < 50:
                 continue
 
