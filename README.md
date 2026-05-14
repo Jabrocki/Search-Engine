@@ -51,7 +51,9 @@ SVD stands for Singular Value Decomposition. It is a matrix factorization techni
 TF-IDF stands for Term Frequency-Inverse Document Frequency.
 For each term in the document we calculate two values:
 IDF:
-$$IDF(t) = log(\frac{N}{n_{t}})$$
+$$
+IDF(t) = log(\frac{N}{n_{t}})
+$$
 where $N$ is the total number of documents and $n_{t}$ is the number of documents containing the term $t$. Later we transform matrix by multiplying each term vector by its IDF value. At last we normalize the matrix by dividing each term vector by its length. This way we get the TF-IDF matrix.
 
 ### Theory of BM25
@@ -98,3 +100,6 @@ Cosine similarity is a measure of similarity between two vectors. It is calculat
 - `chromadb` - library for creating vector databases in Python. It is used for creating the vector database for all documents. It is already using **HNSW** graph for quick queryin of relevant documents.
 - `peewee` - library for working with SQLite databases in Python. It is used for storing all documents in the database and for retrieving them when needed.
 - `ollama` - library for working with Ollama models in Python. It is used for creating embeddings for all documents using the "nomic-embed-text" model.
+
+### Repo link
+https://github.com/Jabrocki/Search-Engine.git
