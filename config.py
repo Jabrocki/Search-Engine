@@ -6,7 +6,6 @@ DATA_DIR = BASE_DIR / "data_final"
 os.makedirs(DATA_DIR, exist_ok=True)
 VOCAB_FILE = DATA_DIR / "golden_vocabulary_final_2000"
 
-# TODO: change for the final parmeters
 # Config for golden Vocabulary
 FLUSH_INTERVAL = 50000
 PRINT_INTERVAL = 10000
