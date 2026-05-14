@@ -51,9 +51,9 @@ SVD stands for Singular Value Decomposition. It is a matrix factorization techni
 TF-IDF stands for Term Frequency-Inverse Document Frequency.
 For each term in the document we calculate two values:
 IDF:
-$$
-IDF(t) = log(\frac{N}{n_{t}})
-$$
+<br>
+$$IDF(t) = log(\frac{N}{n_{t}})$$
+<br>
 where $N$ is the total number of documents and $n_{t}$ is the number of documents containing the term $t$. Later we transform matrix by multiplying each term vector by its IDF value. At last we normalize the matrix by dividing each term vector by its length. This way we get the TF-IDF matrix.
 
 ### Theory of BM25
@@ -65,16 +65,25 @@ There are two main parameters in BM25:
 - $b$ - document length normalization parameter, usually set to 0.75. It controls how much the document length contributes to the final score. Higher values of $b$ will give more weight to document length, while lower values will give less weight.
 
 First you calculate IDF but using different formula:
+<br>
 $$IDF(t) = log(\frac{N - n_{t} + 0.5}{n_{t} + 0.5} + 1.0)$$
+<br>
 You also calculate average document length:
+<br>
 $$AVG(d) = \frac{1}{N} \sum_{i=1}^{N} |d_{i}|$$
+<br>
 where $|d_{i}|$ is the length of the document $d_{i}$.
 
 Later we similary to TF-IDF calculate norm factor:
+<br>
 $$norm(d) = (1 - b) + b \cdot \frac{|d|}{AVG(d)}$$
+<br>
 
 At last we calculate BM25 score for each term in the document:
+<br>
 $$BM25(t, d) = IDF(t) \cdot \frac{TF(t, d) \cdot (k_1 + 1)}{TF(t, d) + k_1 \cdot norm(d)}$$
+<br>
+where $TF(t, d)$ is the term frequency of term $t$ in document $d$.
 
 ### Theory of RAG
 This technique is used to create vector database for all documents. It uses some AI model to create embeddings for each document. Effectively it is black box.
