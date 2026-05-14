@@ -1,3 +1,10 @@
-./scrapper/__pycache__/
-./scrapper/spiders/__pycache__/
-./data/*
+**/__pycache__/
+*.py[cod]
+data/*
+data_test/*
+data_final/*
+!data/.gitkeep
+*.joblib
+*.db
+gutenberg_search_engine.egg-info/
+setup_data.sh
